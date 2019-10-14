@@ -22,5 +22,11 @@ npm run dev
 npm start
 ```
 
+## Demo
+
+The api is live at [devcamper.io](https://devcamper.io)
+
+Extensive documentation with examples [here](https://documenter.getpostman.com/view/8923145/SVtVVTzd?version=latest)
+
 - Version: 1.0.0
 - License: MIT
