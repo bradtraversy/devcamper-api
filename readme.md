@@ -45,3 +45,8 @@ Extensive documentation with examples [here](https://documenter.getpostman.com/v
 - Author: Brad Traversy
 
 ## Working with docgen
+
+> Creting index.html file
+```
+docgen build -i ~/Desktop/postmanexported.json -o ~/Desktop/index.html
+```
