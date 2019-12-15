@@ -46,7 +46,13 @@ Extensive documentation with examples [here](https://documenter.getpostman.com/v
 
 ## Working with docgen
 
-> Creting index.html file
+Instaling docgen
+```
+brew tap thedevsaddam/cli https://github.com/thedevsaddam/homebrew-cli.git
+brew install docgen
+```
+
+Creting index.html file
 ```
 docgen build -i ~/Desktop/postmanexported.json -o ~/Desktop/index.html
 ```
