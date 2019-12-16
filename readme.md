@@ -46,7 +46,7 @@ Extensive documentation with examples [here](https://documenter.getpostman.com/v
 
 ## Working with docgen
 
-Instaling docgen
+Installing docgen on mac
 ```
 brew tap thedevsaddam/cli https://github.com/thedevsaddam/homebrew-cli.git
 brew install docgen
