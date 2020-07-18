@@ -50,11 +50,17 @@ ReviewSchema.statics.getAverageRating = async function(bootcampId) {
     }
   ]);
 
-  try {
-    await this.model('Bootcamp').findByIdAndUpdate(bootcampId, {
-      averageRating: obj[0].averageRating
-    });
-  } catch (err) {
+ try {
+    if (obj[0]) {
+      await this.model("Bootcamp").findByIdAndUpdate(bootcampId, {
+        averageRating: obj[0].averageRating.toFixed(1),
+      });
+    } else {
+      await this.model("Bootcamp").findByIdAndUpdate(bootcampId, {
+        averageRating: undefined,
+      });
+    }
+  }  catch (err) {
     console.error(err);
   }
 };
