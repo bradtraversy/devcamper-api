@@ -4,6 +4,8 @@ const {
   login,
   logout,
   getMe,
+  toggleOtp,
+  loginOtp,
   forgotPassword,
   resetPassword,
   updateDetails,
@@ -24,5 +26,7 @@ router.put('/updatedetails', protect, updateDetails);
 router.put('/updatepassword', protect, updatePassword);
 router.post('/forgotpassword', forgotPassword);
 router.put('/resetpassword/:resettoken', resetPassword);
+router.put('/otp', protect, toggleOtp);
+router.post('/otp', loginOtp);
 
 module.exports = router;

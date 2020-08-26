@@ -23,6 +23,14 @@ const UserSchema = new mongoose.Schema({
     enum: ['user', 'publisher'],
     default: 'user',
   },
+  otp: {
+    type: Boolean,
+    default: false
+  },
+  otpKey: {
+    type: String,
+    select: false
+  },
   password: {
     type: String,
     required: [true, 'Please add a password'],
@@ -33,12 +41,6 @@ const UserSchema = new mongoose.Schema({
   resetPasswordExpire: Date,
   confirmEmailToken: String,
   isEmailConfirmed: {
-    type: Boolean,
-    default: false,
-  },
-  twoFactorCode: String,
-  twoFactorCodeExpire: Date,
-  twoFactorEnable: {
     type: Boolean,
     default: false,
   },
