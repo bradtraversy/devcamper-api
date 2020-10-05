@@ -104,7 +104,7 @@ exports.updateCourse = asyncHandler(async (req, res, next) => {
     new: true,
     runValidators: true
   });
-
+  course.constructor.getAverageCost(course.bootcamp);
   course.save();
 
   res.status(200).json({
