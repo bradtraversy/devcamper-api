@@ -99,10 +99,14 @@ exports.getMe = asyncHandler(async (req, res, next) => {
 // @route     PUT /api/v1/auth/updatedetails
 // @access    Private
 exports.updateDetails = asyncHandler(async (req, res, next) => {
-  const fieldsToUpdate = {
-    name: req.body.name,
-    email: req.body.email,
-  };
+  const fieldsToUpdate = {};
+//only if fields exists, assign it to fieldsToUpdate object to make sure no property is undefined
+  if (req.body.email) {
+    fieldsToUpdate.email = req.body.email;
+  }
+  if (req.body.name) {
+    fieldsToUpdate.name = req.body.name;
+  }
 
   const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
     new: true,
