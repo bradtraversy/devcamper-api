@@ -59,6 +59,12 @@ exports.createBootcamp = asyncHandler(async (req, res, next) => {
 // @access    Private
 exports.updateBootcamp = asyncHandler(async (req, res, next) => {
   let bootcamp = await Bootcamp.findById(req.params.id);
+  
+  // update slug while updating name
+  if (Object.keys(req.body).includes("name")) {
+    req.body.slug = slugify(req.body.name, { lower: true });
+  }
+
 
   if (!bootcamp) {
     return next(
