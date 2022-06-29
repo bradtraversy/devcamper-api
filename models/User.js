@@ -58,6 +58,14 @@ UserSchema.pre('save', async function (next) {
   this.password = await bcrypt.hash(this.password, salt);
 });
 
+// Encrypt password after updating user details (admin)
+UserSchema.pre("findOneAndUpdate", async function (next) {
+  if (!this._update.password) {
+    next();
+  }
+  this._update.password = await bcrypt.hash(this._update.password, 10);
+});
+
 // Sign JWT and return
 UserSchema.methods.getSignedJwtToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
