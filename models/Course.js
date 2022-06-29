@@ -57,18 +57,15 @@ CourseSchema.statics.getAverageCost = async function(bootcampId) {
     }
   ]);
 
+  const averageCost = obj[0]
+    ? Math.ceil(obj[0].averageCost / 10) * 10
+    : undefined;
   try {
- if (obj[0]) {
-      await this.model("Bootcamp").findByIdAndUpdate(bootcampId, {
-        averageCost:Math.ceil(obj[0].averageCost / 10) * 10,
-      });
-    } else {
-      await this.model("Bootcamp").findByIdAndUpdate(bootcampId, {
-        averageCost: undefined,
-      });
-    }
+    await this.model("Bootcamp").findByIdAndUpdate(bootcampId, {
+      averageCost,
+    });
   } catch (err) {
-    console.error(err);
+    console.log(err);
   }
 };
 
@@ -82,5 +79,11 @@ CourseSchema.post('remove', async function () {
   await this.constructor.getAverageCost(this.bootcamp);
 });
 
+// Call getAverageCost after tuition update
+CourseSchema.post("findOneAndUpdate", async function (doc) {
+  if (this.tuition != doc.tuition) {
+    await doc.constructor.getAverageCost(doc.bootcamp);
+  }
+});
 
 module.exports = mongoose.model('Course', CourseSchema);
