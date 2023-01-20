@@ -1,4 +1,5 @@
 const path = require('path');
+const slugify = require("slugify");
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const geocoder = require('../utils/geocoder');
@@ -74,6 +75,11 @@ exports.updateBootcamp = asyncHandler(async (req, res, next) => {
         401
       )
     );
+  }
+  
+  // update slug while updating name
+  if (Object.keys(req.body).includes("name")) {
+    req.body.slug = slugify(req.body.name, { lower: true });
   }
 
   bootcamp = await Bootcamp.findByIdAndUpdate(req.params.id, req.body, {
