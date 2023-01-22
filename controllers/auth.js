@@ -1,4 +1,7 @@
 const crypto = require('crypto');
+const Speakeasy = require("speakeasy");
+const Cryptr = require('cryptr');
+const cryptr = new Cryptr(process.env.SECRET_KEY_OTP);
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const sendEmail = require('../utils/sendEmail');
@@ -52,6 +55,10 @@ exports.login = asyncHandler(async (req, res, next) => {
 
   // Check for user
   const user = await User.findOne({ email }).select('+password');
+
+  if (user.otp) {
+    return next(new ErrorResponse('Please login using One-time password token', 400));
+  }
 
   if (!user) {
     return next(new ErrorResponse('Invalid credentials', 401));
@@ -121,6 +128,11 @@ exports.updateDetails = asyncHandler(async (req, res, next) => {
 exports.updatePassword = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user.id).select('+password');
 
+  // prevent user from updating their password if otp is enabled
+  if (user.otp) {
+    return next(new ErrorResponse('Account OTP is turned on', 400));
+  }
+
   // Check current password
   if (!(await user.matchPassword(req.body.currentPassword))) {
     return next(new ErrorResponse('Password is incorrect', 401));
@@ -142,9 +154,26 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('There is no user with that email', 404));
   }
 
+  if (user.otp) {
+    // if turned on, generate a new authenticator key and save the user
+    const secret = Speakeasy.generateSecret({ length: 20 });
+    user.otpKey = cryptr.encrypt(secret.base32);
+    await user.save();
+
+    // send an email along with the authenticator key
+    await sendEmail({
+      email: user.email,
+      subject: 'Dev Camper New One-Time Password Authenticator Key',
+      message: `Here is your new authenticator key: ${secret.base32}. On you authenticator app, Please make sure that you choose  'Time-Based' as a type of key.`
+    });
+
+    return res
+      .status(200)
+      .json({ sucess: true, data: "Account OTP is enabled. Hence, OTP Authenticator key reset was done instead. Please check your email" });
+  }
+
   // Get reset token
   const resetToken = user.getResetPasswordToken();
-
   await user.save({ validateBeforeSave: false });
 
   // Create reset url
@@ -240,6 +269,84 @@ exports.confirmEmail = asyncHandler(async (req, res, next) => {
   // return token
   sendTokenResponse(user, 200, res);
 });
+
+
+/**
+ * @desc    Toggle OTP
+ * @route   PUT /api/v1/auth/otp
+ * @access  Private
+ */
+exports.toggleOtp = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+
+  // prevent login via otp if email is not confirmed
+  if (!user.isEmailConfirmed) {
+    return next(new ErrorResponse('Please confirm your email first', 400));
+  }
+
+  // toggle otp
+  user.otp = !user.otp
+
+  // if turned off
+  if (!user.otp) {
+    await user.save();
+    return res
+      .cookie('token', 'none', {
+        expires: new Date(Date.now() + 10 * 1000),
+        httpOnly: true,
+      })
+      .status(200)
+      .json({ sucess: true, data: "Turned off OTP. Please login again. Setup your password again by using forgot password unless your remembered your old password" })
+  }
+
+  // if turned on, generate an authenticator and save the user
+  const secret = Speakeasy.generateSecret({ length: 20 });
+  user.otpKey = cryptr.encrypt(secret.base32);
+  await user.save();
+
+  // send an email along with the authenticator key
+  await sendEmail({
+    email: user.email,
+    subject: 'Dev Camper One-Time Password Activated',
+    message: `Here is your authenticator key: ${secret.base32}. On you authenticator app, Please make sure that you choose  'Time-Based' as a type of key.`
+  });
+
+  // logout the user
+  return res
+    .cookie('token', 'none', {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+    })
+    .status(200)
+    .json({ sucess: true, data: "Turned on OTP. Please login again" });
+
+});
+
+
+/**
+ * @desc    Login via OTP
+ * @route   POST /api/v1/auth/otp
+ * @access  Public
+ */
+exports.loginOtp = asyncHandler(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email }).select('+otpKey');
+
+  if (!user) { return next(new ErrorResponse("There is no user with that email", 404)) }
+  if (!user.otp) { return next(new ErrorResponse("Account OTP is not enabled", 400)) }
+  if (!req.body.token) { return next(new ErrorResponse("Invalid token", 400)) }
+
+  const isVerified = Speakeasy.totp.verify({
+    secret: cryptr.decrypt(user.otpKey),
+    token: req.body.token,
+    encoding: "base32",
+    window: 0
+  })
+
+  if (!isVerified) { return next(new ErrorResponse("Invalid token", 400)) }
+
+  sendTokenResponse(user, 200, res);
+});
+
 
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
